@@ -1,13 +1,5 @@
-import React from 'react';
-import GradeCalculator from './components/GradeCalculator';
-import './index.css';
+import GradeCalculator from "./components/GradeCalculator.jsx";
 
-function App() {
-  return (
-    <div className="App">
-      <GradeCalculator />
-    </div>
-  );
+export default function App() {
+  return <GradeCalculator />;
 }
-
-export default App;
