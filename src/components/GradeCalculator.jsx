@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BookOpen, Plus } from "lucide-react";
+import { Edit3, Plus, RotateCcw } from "lucide-react";
 import useGradeCalculations from "../hooks/useGradeCalculations.js";
 import CategoryCard from "./ui/CategoryCard.jsx";
 import NewClassModal from "./modals/NewClassModal.jsx";
@@ -8,11 +8,36 @@ import WeightWarningModal from "./modals/WeightWarningModal.jsx";
 import GradeCalculatorModal from "./modals/GradeCalculatorModal.jsx";
 import { getCurrentTotalWeight as _getTotal } from "../utils/gradeUtils.js";
 
+const STORAGE_KEY = "grade-calculator-state";
+const DEFAULT_CLASSES = {
+  "Course 1": { id: 1, gradeType: "percent", totalPoints: 1000, categories: {} },
+};
+
+const loadStoredState = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!parsed.classes || typeof parsed.classes !== "object") return null;
+    const classNames = Object.keys(parsed.classes);
+    if (classNames.length === 0) return null;
+    const activeClass = classNames.includes(parsed.activeClass)
+      ? parsed.activeClass
+      : classNames[0];
+    return { classes: parsed.classes, activeClass };
+  } catch {
+    return null;
+  }
+};
+
 export default function GradeCalculator() {
-  const [classes, setClasses] = useState({
-    "Course 1": { id: 1, gradeType: "percent", totalPoints: 1000, categories: {} },
-  });
-  const [activeClass, setActiveClass] = useState("Course 1");
+  const storedState = loadStoredState();
+  const [classes, setClasses] = useState(storedState?.classes ?? DEFAULT_CLASSES);
+  const [activeClass, setActiveClass] = useState(
+    storedState?.activeClass ?? Object.keys(DEFAULT_CLASSES)[0]
+  );
 
   // UI state
   const [showNewClassForm, setShowNewClassForm] = useState(false);
@@ -20,6 +45,8 @@ export default function GradeCalculator() {
   const [showWeightWarning, setShowWeightWarning] = useState(false);
   const [editingWeight, setEditingWeight] = useState(null);
   const [pendingCategory, setPendingCategory] = useState(null);
+  const [isEditingCourseName, setIsEditingCourseName] = useState(false);
+  const [courseNameDraft, setCourseNameDraft] = useState("");
 
   // Grade calculator modal
   const [calcCategory, setCalcCategory] = useState(null);
@@ -58,6 +85,18 @@ export default function GradeCalculator() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ classes, activeClass })
+      );
+    } catch {
+      // Ignore storage failures (quota, privacy mode, etc.)
+    }
+  }, [classes, activeClass]);
+
   // ---- class ops ----
   const addClass = () => {
     if (!newClassForm.name.trim()) return;
@@ -81,6 +120,38 @@ export default function GradeCalculator() {
     delete n[className];
     setClasses(n);
     if (activeClass === className) setActiveClass(Object.keys(n)[0]);
+  };
+
+  const startEditCourseName = () => {
+    setCourseNameDraft(activeClass);
+    setIsEditingCourseName(true);
+  };
+
+  const cancelEditCourseName = () => {
+    setIsEditingCourseName(false);
+    setCourseNameDraft("");
+  };
+
+  const saveCourseName = () => {
+    const nextName = courseNameDraft.trim();
+    if (!nextName) return;
+    if (nextName !== activeClass && classes[nextName]) {
+      window.alert("A course with that name already exists.");
+      return;
+    }
+    if (nextName === activeClass) {
+      cancelEditCourseName();
+      return;
+    }
+    setClasses((prev) => {
+      const updated = { ...prev };
+      const existing = updated[activeClass];
+      delete updated[activeClass];
+      updated[nextName] = existing;
+      return updated;
+    });
+    setActiveClass(nextName);
+    cancelEditCourseName();
   };
 
   // ---- category ops ----
@@ -192,6 +263,18 @@ export default function GradeCalculator() {
     });
   };
 
+  const resetCategories = () => {
+    if (!currentClass) return;
+    const ok = window.confirm("Reset all categories for this course?");
+    if (!ok) return;
+    setClasses((prev) => ({
+      ...prev,
+      [activeClass]: { ...prev[activeClass], categories: {} },
+    }));
+    setEditingWeight(null);
+    setCalcCategory(null);
+  };
+
   const toggleCategory = (name) => {
     setClasses((prev) => ({
       ...prev,
@@ -271,15 +354,27 @@ export default function GradeCalculator() {
 
   // ----- render -----
   const header = (
-    <div className="bg-white bg-opacity-95 backdrop-blur rounded-2xl shadow-lg p-6 mb-6 border border-pink-200">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-3xl font-bold flex items-center gap-3" style={{ color: "#6B73B5" }}>
-          <BookOpen size={32} />
-          Grade Calculator
-        </h1>
-        <div className="text-right">
+    <div
+      className="bg-white rounded-[28px] shadow-[0_12px_40px_rgba(0,0,0,0.08)] p-5 sm:p-6 mb-6 border"
+      style={{ borderColor: "#f3c8d5" }}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3">
+          <img
+            src="/cat.png"
+            alt="Cat icon"
+            className="h-10 w-10 sm:h-12 sm:w-12"
+          />
+          <h1
+            className="font-display text-3xl sm:text-4xl font-bold leading-tight"
+            style={{ color: "#6c584c" }}
+          >
+            Grade Calculator
+          </h1>
+        </div>
+        <div className="text-left sm:text-right">
           <div className="text-sm text-gray-600 mb-1">Overall Grade</div>
-          <div className="text-3xl font-bold" style={{ color: "#6B73B5" }}>
+          <div className="text-2xl sm:text-3xl font-bold" style={{ color: "#6c584c" }}>
             {currentClass?.gradeType === "percent"
               ? `${overallGrade.toFixed(1)}%`
               : `${overallGrade.toFixed(1)}/${currentClass?.totalPoints || 1000}`}
@@ -287,23 +382,48 @@ export default function GradeCalculator() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <select
-          value={activeClass}
-          onChange={(e) => setActiveClass(e.target.value)}
-          className="px-4 py-2 border rounded-lg bg-white bg-opacity-90 backdrop-blur focus:outline-none focus:ring-2 focus:ring-indigo-300 border-pink-200"
-        >
-          {Object.keys(classes).map((cn) => (
-            <option key={cn} value={cn}>
-              {cn}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+          <select
+            value={activeClass}
+            onChange={(e) => setActiveClass(e.target.value)}
+            className="w-full sm:w-auto px-4 py-2 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-[#6c584c]/30 ring-1 ring-black/5"
+            disabled={isEditingCourseName}
+          >
+            {Object.keys(classes).map((cn) => (
+              <option key={cn} value={cn}>
+                {cn}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={startEditCourseName}
+              className="p-2 rounded-full bg-white ring-1 ring-black/5 hover:bg-[#f7f2ed] transition-colors"
+              style={{ color: "#6c584c" }}
+              disabled={isEditingCourseName}
+              aria-label="Edit course name"
+              title="Edit course name"
+            >
+              <Edit3 size={16} />
+            </button>
+            <button
+              onClick={resetCategories}
+              className="p-2 rounded-full bg-white ring-1 ring-black/5 hover:bg-[#f7f2ed] transition-colors"
+              style={{ color: "#6c584c" }}
+              aria-label="Reset categories"
+              title="Reset categories"
+            >
+              <RotateCcw size={16} />
+            </button>
+          </div>
+        </div>
 
         <button
           onClick={() => setShowNewClassForm(true)}
-          className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-all duration-200 shadow-md"
-          style={{ backgroundColor: "#6B73B5" }}
+          className="w-full sm:w-auto px-6 py-2 text-white rounded-full hover:opacity-90 transition-all duration-200 shadow-[0_6px_20px_rgba(0,0,0,0.12)]"
+          style={{ backgroundColor: "#6c584c" }}
         >
           New Course
         </button>
@@ -311,13 +431,43 @@ export default function GradeCalculator() {
         {Object.keys(classes).length > 1 && (
           <button
             onClick={() => deleteClass(activeClass)}
-            className="px-4 py-2 text-white rounded-lg hover:opacity-90 transition-all duration-200"
-            style={{ backgroundColor: "#F4A5A5" }}
+            className="w-full sm:w-auto px-4 py-2 text-white rounded-full hover:opacity-90 transition-all duration-200"
+            style={{ backgroundColor: "#d6a7a7" }}
           >
             Delete Course
           </button>
         )}
       </div>
+
+      {isEditingCourseName && (
+        <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <input
+            type="text"
+            value={courseNameDraft}
+            onChange={(e) => setCourseNameDraft(e.target.value)}
+            className="w-full sm:w-80 px-4 py-2 rounded-full bg-white ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-[#6c584c]/30"
+            placeholder="Course name"
+            onKeyDown={(e) => e.key === "Enter" && saveCourseName()}
+            autoFocus
+          />
+          <div className="flex gap-3">
+            <button
+              onClick={saveCourseName}
+              className="flex-1 sm:flex-none px-4 py-2 text-white rounded-full hover:opacity-90 transition-all duration-200"
+              style={{ backgroundColor: "#6c584c" }}
+              disabled={!courseNameDraft.trim()}
+            >
+              Save
+            </button>
+            <button
+              onClick={cancelEditCourseName}
+              className="flex-1 sm:flex-none px-4 py-2 text-[#6c584c] rounded-full hover:opacity-90 transition-all duration-200 bg-white ring-1 ring-black/5"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -336,10 +486,10 @@ export default function GradeCalculator() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Pink bg */}
-      <div className="fixed inset-0" style={{ backgroundColor: "#f8bbd9" }} />
-      <div className="relative min-h-screen bg-white bg-opacity-80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto p-6">
+      {/* App bg */}
+      <div className="fixed inset-0" style={{ backgroundColor: "#e3d5ca" }} />
+      <div className="relative min-h-screen">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6">
           {header}
 
           {/* Categories */}
@@ -371,8 +521,8 @@ export default function GradeCalculator() {
 
             <button
               onClick={() => setShowAddCategoryForm(true)}
-              className="w-full p-6 bg-white bg-opacity-70 backdrop-blur border-2 border-dashed rounded-2xl hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center gap-3 font-medium border-pink-300"
-              style={{ color: "#6B73B5" }}
+            className="w-full p-6 bg-white border border-dashed rounded-[28px] hover:bg-[#f7f2ed] transition-all duration-200 flex items-center justify-center gap-3 font-medium"
+            style={{ color: "#6c584c", borderColor: "#f3c8d5" }}
             >
               <Plus size={24} />
               Add New Category

@@ -5,9 +5,9 @@ export default function NewClassModal({ open, onClose, form, setForm, onAdd }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md border border-pink-200">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md border border-pink-200 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold" style={{ color: "#6B73B5" }}>
+          <h3 className="text-xl font-semibold" style={{ color: "#6c584c" }}>
             Add New Course
           </h3>
           <button onClick={onClose} className="p-2 hover:bg-pink-50 rounded-lg">
@@ -54,7 +54,7 @@ export default function NewClassModal({ open, onClose, form, setForm, onAdd }) {
             <button
               onClick={onAdd}
               className="flex-1 px-4 py-3 text-white rounded-lg hover:opacity-90 transition-colors"
-              style={{ backgroundColor: "#6B73B5" }}
+              style={{ backgroundColor: "#6c584c" }}
               disabled={!form.name.trim()}
             >
               Add Course

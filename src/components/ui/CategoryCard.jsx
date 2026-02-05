@@ -23,72 +23,75 @@ export default function CategoryCard({
       : `${calculateCategoryAverage(category.assignments).toFixed(1)}%`;
 
   return (
-    <div className="bg-white bg-opacity-95 backdrop-blur rounded-2xl shadow-lg overflow-hidden border border-pink-200">
-      <div className="p-6 border-b border-pink-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div
+      className="rounded-[28px] shadow-[0_12px_40px_rgba(0,0,0,0.08)] overflow-hidden border"
+      style={{ backgroundColor: "#ffffff", borderColor: "#f3c8d5" }}
+    >
+      <div className="p-5 sm:p-6 border-b border-black/5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={onToggle}
-              className="p-2 hover:bg-pink-50 rounded-lg transition-colors"
+              className="p-2 rounded-full bg-white/70 hover:bg-white transition-colors"
             >
               {category.expanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
             </button>
-            <h3 className="text-xl font-semibold text-gray-800">{categoryName}</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800">{categoryName}</h3>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <div className="text-sm text-gray-600">Grade</div>
-              <div className="text-lg font-bold" style={{ color: "#6B73B5" }}>
-                {gradeText}
+          <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 w-full md:w-auto md:ml-auto">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+              <div className="text-left md:text-right">
+                <div className="text-sm text-gray-600">Grade</div>
+                <div className="text-lg font-bold" style={{ color: "#6c584c" }}>
+                  {gradeText}
+                </div>
+              </div>
+
+              <div className="text-left md:text-right">
+                <div className="text-sm text-gray-600">Weight</div>
+                <div className="flex items-center gap-2">
+                  {editingWeight === categoryName ? (
+                    <input
+                      type="number"
+                      defaultValue={category.weight ?? ""}
+                      onBlur={(e) => onUpdateWeight(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                      className="w-24 px-2 py-1 rounded-full bg-white/80 ring-1 ring-black/5 text-center focus:outline-none focus:ring-2 focus:ring-[#6c584c]/30"
+                      autoFocus
+                    />
+                  ) : (
+                    <>
+                      <span className="text-lg font-bold">
+                        {getWeightDisplay(category.weight)}
+                      </span>
+                      <button
+                        onClick={onStartEditWeight}
+                        className="p-1 rounded-full hover:bg-white/80"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="text-right">
-              <div className="text-sm text-gray-600">Weight</div>
-              <div className="flex items-center gap-2">
-                {editingWeight === categoryName ? (
-                  <input
-                    type="number"
-                    defaultValue={category.weight ?? ""}
-                    onBlur={(e) => onUpdateWeight(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-                    className="w-20 px-2 py-1 border border-pink-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                    autoFocus
-                  />
-                ) : (
-                  <>
-                    <span className="text-lg font-bold">
-                      {getWeightDisplay(category.weight)}
-                    </span>
-                    <button
-                      onClick={onStartEditWeight}
-                      className="p-1 hover:bg-pink-50 rounded"
-                    >
-                      <Edit3 size={14} />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-2">
+            <div className="flex gap-2 md:items-center">
               {category.weight !== null && (
                 <button
                   onClick={openGradeCalculator}
-                  className="p-2 rounded-lg transition-colors border border-yellow-300"
-                  style={{ backgroundColor: "#F5E6A3" }}
+                  className="p-2 rounded-full transition-colors ring-1 ring-black/5 bg-white/80 hover:bg-white"
                   title="Calculate required grade"
                 >
-                  <Target size={16} style={{ color: "#d97706" }} />
+                  <Target size={16} style={{ color: "#6c584c" }} />
                 </button>
               )}
               <button
                 onClick={onDelete}
-                className="p-2 rounded-lg transition-colors border border-red-200"
-                style={{ backgroundColor: "#F4A5A5" }}
+                className="p-2 rounded-full transition-colors ring-1 ring-black/5 bg-white/80 hover:bg-white"
               >
-                <Trash2 size={16} className="text-red-800" />
+                <Trash2 size={16} style={{ color: "#b07a7a" }} />
               </button>
             </div>
           </div>
@@ -96,7 +99,7 @@ export default function CategoryCard({
       </div>
 
       {category.expanded && (
-        <div className="p-6 bg-yellow-50 bg-opacity-80">
+        <div className="p-6 bg-white">
           <div className="space-y-3">
             {category.assignments.map((a) => (
               <AssignmentRow
@@ -112,8 +115,8 @@ export default function CategoryCard({
 
           <button
             onClick={addAssignment}
-            className="mt-4 px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 mx-auto text-white hover:scale-105 hover:shadow-lg"
-            style={{ backgroundColor: "#6B73B5" }}
+            className="mt-4 px-6 py-3 rounded-full transition-all duration-200 flex items-center gap-2 mx-auto text-white hover:scale-105 hover:shadow-lg"
+            style={{ backgroundColor: "#6c584c" }}
           >
             <Plus size={16} />
             Add Assignment

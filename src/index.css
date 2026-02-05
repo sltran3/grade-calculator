@@ -4,3 +4,7 @@
 
 /* optional app-wide tweaks */
 html, body, #root { height: 100%; }
+
+.font-display {
+  font-family: "Satisfy", cursive;
+}

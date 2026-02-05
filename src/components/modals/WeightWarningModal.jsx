@@ -10,10 +10,10 @@ export default function WeightWarningModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md border border-pink-200">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md border border-pink-200 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center gap-3 mb-4">
           <AlertTriangle style={{ color: "#F5E6A3" }} size={24} />
-          <h3 className="text-xl font-semibold" style={{ color: "#6B73B5" }}>
+          <h3 className="text-xl font-semibold" style={{ color: "#6c584c" }}>
             Weight Warning
           </h3>
         </div>
