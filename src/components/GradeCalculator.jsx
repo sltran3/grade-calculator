@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Edit3, Plus, RotateCcw } from "lucide-react";
 import useGradeCalculations from "../hooks/useGradeCalculations.js";
 import CategoryCard from "./ui/CategoryCard.jsx";
@@ -47,6 +47,8 @@ export default function GradeCalculator() {
   const [pendingCategory, setPendingCategory] = useState(null);
   const [isEditingCourseName, setIsEditingCourseName] = useState(false);
   const [courseNameDraft, setCourseNameDraft] = useState("");
+  const [showCourseMenu, setShowCourseMenu] = useState(false);
+  const courseMenuRef = useRef(null);
 
   // Grade calculator modal
   const [calcCategory, setCalcCategory] = useState(null);
@@ -79,11 +81,24 @@ export default function GradeCalculator() {
         setShowWeightWarning(false);
         setCalcCategory(null);
         setEditingWeight(null);
+        setShowCourseMenu(false);
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => {
+    if (!showCourseMenu) return;
+    const handleClickOutside = (event) => {
+      if (!courseMenuRef.current) return;
+      if (!courseMenuRef.current.contains(event.target)) {
+        setShowCourseMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showCourseMenu]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -152,6 +167,16 @@ export default function GradeCalculator() {
     });
     setActiveClass(nextName);
     cancelEditCourseName();
+  };
+
+  const deleteCourseAndReset = () => {
+    const ok = window.confirm("Delete this course and reset to the default?");
+    if (!ok) return;
+    setClasses(DEFAULT_CLASSES);
+    setActiveClass(Object.keys(DEFAULT_CLASSES)[0]);
+    setIsEditingCourseName(false);
+    setCourseNameDraft("");
+    setShowCourseMenu(false);
   };
 
   // ---- category ops ----
@@ -305,7 +330,7 @@ export default function GradeCalculator() {
               ...prev[activeClass].categories[categoryName].assignments,
               {
                 id: Date.now(),
-                name: `Assignment ${prev[activeClass].categories[categoryName].assignments.length + 1}`,
+                name: `${categoryName} ${prev[activeClass].categories[categoryName].assignments.length + 1}`,
                 grade: null,
                 maxPoints: 100,
               },
@@ -398,16 +423,38 @@ export default function GradeCalculator() {
           </select>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={startEditCourseName}
-              className="p-2 rounded-full bg-white ring-1 ring-black/5 hover:bg-[#f7f2ed] transition-colors"
-              style={{ color: "#6c584c" }}
-              disabled={isEditingCourseName}
-              aria-label="Edit course name"
-              title="Edit course name"
-            >
-              <Edit3 size={16} />
-            </button>
+            <div className="relative" ref={courseMenuRef}>
+              <button
+                onClick={() => setShowCourseMenu((prev) => !prev)}
+                className="p-2 rounded-full bg-white ring-1 ring-black/5 hover:bg-[#f7f2ed] transition-colors"
+                style={{ color: "#6c584c" }}
+                aria-label="Course options"
+                title="Course options"
+              >
+                <Edit3 size={16} />
+              </button>
+              {showCourseMenu && (
+                <div className="absolute left-0 mt-2 w-48 rounded-xl bg-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5 z-10">
+                  <button
+                    onClick={() => {
+                      startEditCourseName();
+                      setShowCourseMenu(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-[#f7f2ed] rounded-t-xl"
+                    style={{ color: "#6c584c" }}
+                  >
+                    Edit course name
+                  </button>
+                  <button
+                    onClick={deleteCourseAndReset}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-[#f7f2ed] rounded-b-xl"
+                    style={{ color: "#b07a7a" }}
+                  >
+                    Delete course
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               onClick={resetCategories}
               className="p-2 rounded-full bg-white ring-1 ring-black/5 hover:bg-[#f7f2ed] transition-colors"

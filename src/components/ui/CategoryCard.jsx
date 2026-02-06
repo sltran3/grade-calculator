@@ -119,7 +119,7 @@ export default function CategoryCard({
             style={{ backgroundColor: "#6c584c" }}
           >
             <Plus size={16} />
-            Add Assignment
+            {`Add ${categoryName}`}
           </button>
         </div>
       )}
