@@ -48,6 +48,7 @@ export default function GradeCalculator() {
   const [isEditingCourseName, setIsEditingCourseName] = useState(false);
   const [courseNameDraft, setCourseNameDraft] = useState("");
   const [showCourseMenu, setShowCourseMenu] = useState(false);
+  const [showOverallPoints, setShowOverallPoints] = useState(false);
   const courseMenuRef = useRef(null);
 
   // Grade calculator modal
@@ -99,6 +100,10 @@ export default function GradeCalculator() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showCourseMenu]);
+
+  useEffect(() => {
+    setShowOverallPoints(false);
+  }, [activeClass, classes]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -399,10 +404,38 @@ export default function GradeCalculator() {
         </div>
         <div className="text-left sm:text-right">
           <div className="text-sm text-gray-600 mb-1">Overall Grade</div>
-          <div className="text-2xl sm:text-3xl font-bold" style={{ color: "#6c584c" }}>
-            {currentClass?.gradeType === "percent"
-              ? `${overallGrade.toFixed(1)}%`
-              : `${overallGrade.toFixed(1)}/${currentClass?.totalPoints || 1000}`}
+          <div className="relative inline-flex group">
+            <button
+              type="button"
+              onClick={() => {
+                if (currentClass?.gradeType === "points") {
+                  setShowOverallPoints((prev) => !prev);
+                }
+              }}
+              className={`text-2xl sm:text-3xl font-bold ${
+                currentClass?.gradeType === "points" ? "cursor-pointer" : "cursor-default"
+              }`}
+              style={{ color: "#6c584c" }}
+              title={
+                currentClass?.gradeType === "points"
+                  ? "Click to toggle percent/points"
+                  : undefined
+              }
+            >
+              {currentClass?.gradeType === "points"
+                ? showOverallPoints
+                  ? `${overallGrade.toFixed(1)} / ${currentClass?.totalPoints || 0}`
+                  : `${(
+                      (overallGrade / Math.max(currentClass?.totalPoints || 1, 1)) *
+                      100
+                    ).toFixed(1)}%`
+                : `${overallGrade.toFixed(1)}%`}
+            </button>
+            {currentClass?.gradeType === "points" && (
+              <span className="pointer-events-none absolute -top-7 right-0 rounded-full bg-white px-2 py-1 text-xs text-[#6c584c] shadow-[0_6px_20px_rgba(0,0,0,0.08)] opacity-0 transition-opacity group-hover:opacity-100">
+                {showOverallPoints ? "Click to see Percent" : "Click to see Points"}
+              </span>
+            )}
           </div>
         </div>
       </div>
